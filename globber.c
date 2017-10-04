@@ -24,8 +24,10 @@ struct linux_dirent {
 
 int get_files_in_dir(const char* path, char* string_buf, uint64_t strbuf_len, char* pointer_buf[], uint64_t pointbuf_len);
 
+int matches(const char* str, const char* pattern);
+
 int main(int argc, char* argv[]) {
-    int i;
+    int i, j;
 
     char string_buf[MULTI_BUFFER_SIZE];
     char* pointer_buf[BUFFER_SIZE];
@@ -39,8 +41,17 @@ int main(int argc, char* argv[]) {
 
     printf("\nGlobs:\n");
 
-    for(i = 1; i < argc; i++)
-        printf("%s:\n", argv[i]);
+    for(i = 1; i < argc; i++) {   
+        printf("\"%s\":\n", argv[i]);
+        
+        for(j = 0; j < elems; j++)
+            if(matches(argv[i], pointer_buf[j]))
+                printf("\t%s\n", pointer_buf[j]);
+    }
+}
+
+int matches(const char* str, const char* pattern) {
+    return strcmp(str, pattern) == 0;
 }
 
 int get_files_in_dir(const char* path, char* string_buf, uint64_t strbuf_len, char* pointer_buf[], uint64_t pointbuf_len) {
