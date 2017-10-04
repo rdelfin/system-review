@@ -2,6 +2,7 @@
 
 #include <fcntl.h>
 #include <dirent.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -24,7 +25,7 @@ struct linux_dirent {
 
 int get_files_in_dir(const char* path, char* string_buf, uint64_t strbuf_len, char* pointer_buf[], uint64_t pointbuf_len);
 
-int matches(const char* str, const char* pattern);
+bool matches(const char* str, const char* pattern);
 
 int main(int argc, char* argv[]) {
     int i, j;
@@ -45,13 +46,39 @@ int main(int argc, char* argv[]) {
         printf("\"%s\":\n", argv[i]);
         
         for(j = 0; j < elems; j++)
-            if(matches(argv[i], pointer_buf[j]))
+            if(matches(pointer_buf[j], argv[i]))
                 printf("\t%s\n", pointer_buf[j]);
     }
 }
 
-int matches(const char* str, const char* pattern) {
-    return strcmp(str, pattern) == 0;
+bool matches(const char* str, const char* pattern) {
+    bool match = true;
+    int len_str = strlen(str), len_pattern = strlen(pattern);
+    const char *str_ptr = str, *pattern_ptr = pattern;
+
+    while(match && *str_ptr != '\0' && *pattern_ptr != '\0') {
+        if(*pattern_ptr == '?') {
+            pattern_ptr++;
+        } else if(*pattern_ptr == '*') {
+            if(str_ptr[1] != '\0' && str_ptr[1] == pattern_ptr[1] && matches(str_ptr + 1, pattern_ptr + 1))
+                return true;
+        } else if(*str_ptr != *pattern_ptr) {
+            match = false;
+            pattern_ptr++;
+        } else {
+            pattern_ptr++;
+        }
+
+        if(pattern_ptr[0] == '*' && pattern_ptr[1] == pattern_ptr[0])
+            pattern_ptr++;
+
+        str_ptr++;
+    }
+
+    if(*pattern_ptr == '*')
+        pattern_ptr++;
+
+    return *str_ptr == '\0' && *pattern_ptr == '\0';
 }
 
 int get_files_in_dir(const char* path, char* string_buf, uint64_t strbuf_len, char* pointer_buf[], uint64_t pointbuf_len) {
